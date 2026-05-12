@@ -47,17 +47,17 @@ jobs:
           export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
           export SLIMMED=1
           
-          # Force the compiler to downgrade implicit function errors to warnings
-          export CFLAGS="-Wno-error=implicit-function-declaration"
-          export CXXFLAGS="-Wno-error=implicit-function-declaration"
+          # We pass the compiler override flags directly inside the gmake execution parameters
+          # to ensure the toolchain pipeline registers them.
+          COMPILER_FLAGS="CMAKE_C_FLAGS=-Wno-error=implicit-function-declaration CMAKE_CXX_FLAGS=-Wno-error=implicit-function-declaration"
 
           if [ "${{ matrix.platform_name }}" == "ios" ]; then
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} BOOTJDK=$JAVA_HOME/bin
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1 BOOTJDK=$JAVA_HOME/bin
+            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} BOOTJDK=$JAVA_HOME/bin $COMPILER_FLAGS
+            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1 BOOTJDK=$JAVA_HOME/bin $COMPILER_FLAGS
           elif [ "${{ matrix.platform_name }}" == "tvos" ]; then
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1 BOOTJDK=$JAVA_HOME/bin
+            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1 BOOTJDK=$JAVA_HOME/bin $COMPILER_FLAGS
           else
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} BOOTJDK=$JAVA_HOME/bin
+            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} BOOTJDK=$JAVA_HOME/bin $COMPILER_FLAGS
           fi
 
       - name: Upload regular ipa

@@ -32,20 +32,14 @@ jobs:
       - name: Checkout repository submodules
         run: git submodule update --init --recursive
 
-      # --- INJECT HEADER VIA WORKFLOW ---
-      # This inserts the required system header directly into line 1 of JavaLauncher.m
-      - name: Fix Missing Mach Header
+      # --- BULLETPROOF FUNCTION DECLARATION INJECTION ---
+      # This explicitly defines the hidden Apple kernel functions at the top of the file
+      # so the compiler stops treating them as illegal implicit declarations.
+      - name: Fix Hidden iOS SDK Functions
         run: |
-          echo '#import <mach/task.h>' | cat - Natives/JavaLauncher.m > temp && mv temp Natives/JavaLauncher.m
-          echo "Successfully injected header into JavaLauncher.m"
-
-      # --- FORCE COMPILER TO DOWNGRADE WARNINGS ---
-      # Appends flag directly to CMakeLists configurations inside the Natives module
-      - name: Patch Native Build Flags
-        run: |
-          if [ -f "Natives/CMakeLists.txt" ]; then
-            echo 'add_compile_options("-Wno-error=implicit-function-declaration")' | cat - Natives/CMakeLists.txt > temp && mv temp Natives/CMakeLists.txt
-          fi
+          echo 'extern uint32_t mach_task_self(void);' | cat - Natives/JavaLauncher.m > temp && mv temp Natives/JavaLauncher.m
+          echo 'extern int task_set_exception_ports(uint32_t task, int exception_mask, uint32_t new_port, int behavior, int new_flavor);' | cat - Natives/JavaLauncher.m > temp && mv temp Natives/JavaLauncher.m
+          echo "Successfully injected explicit function prototypes into JavaLauncher.m"
 
       - name: Set up JDK 8
         uses: actions/setup-java@v4

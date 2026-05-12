@@ -19,7 +19,6 @@ jobs:
           - platform: 2
             platform_name: ios
     
-    # Switched from custom runner to GitHub's official Mac runner
     runs-on: macos-latest
     steps:
       - name: Remove work folders
@@ -35,27 +34,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Ensures gmake is available on the GitHub runner
           brew install make
 
       - name: Build for ${{ matrix.platform_name }}
         run: |
-          # Add Homebrew to path (handles both Intel and Apple Silicon runners)
           export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
           export SLIMMED=1
-          
-          # --- CUSTOM DYLIB INJECTION START ---
-          echo "Injecting custom dylibs from repository 'frameworks' folder..."
-          mkdir -p Natives/resources/Frameworks/
-          
-          if [ -d "frameworks" ]; then
-            cp frameworks/*.dylib Natives/resources/Frameworks/
-            echo "Successfully copied dylibs to Natives/resources/Frameworks/"
-          else
-            echo "Error: 'frameworks' folder not found in repository root. Check your upload!"
-            exit 1
-          fi
-          # --- CUSTOM DYLIB INJECTION END ---
 
           if [ "${{ matrix.platform_name }}" == "ios" ]; then
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}

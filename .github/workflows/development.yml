@@ -47,13 +47,37 @@ jobs:
         run: |
           brew install make ldid
 
+      # --- FORCED CODE SIGNING INJECTION STEP ---
+      # This intercepts the build pipeline right before compilation packaging targets execute.
+      # It searches the Amethyst internal Frameworks path and signs every custom dylib with ldid.
+      - name: Inject Framework Signing Rules
+        run: |
+          mkdir -p Natives/resources/Frameworks
+          
+          # We place a tiny pre-build trigger that signs all dylibs right before gmake bundles them
+          cat << 'EOF' > sign_custom_frameworks.sh
+          #!/bin/bash
+          echo "Looking for unsigned custom libraries..."
+          if [ -d "Natives/resources/Frameworks" ]; then
+            find Natives/resources/Frameworks -name "*.dylib" -exec echo "Signing: {}" \; -exec ldid -S {} \;
+            echo "Framework ad-hoc pseudo-signing completed."
+          fi
+          EOF
+          chmod +x sign_custom_frameworks.sh
+          ./sign_custom_frameworks.sh
+
+      # --- COMPILATION PIPELINE ---
       - name: Build for ${{ matrix.platform_name }}
         run: |
           export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
           export SLIMMED=1
 
+          # Run the signing script again during the active make sequence to cover generated assets
+          ./sign_custom_frameworks.sh
+
           if [ "${{ matrix.platform_name }}" == "ios" ]; then
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} BOOTJDK=$JAVA_HOME/bin
+            ./sign_custom_frameworks.sh
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1 BOOTJDK=$JAVA_HOME/bin
           elif [ "${{ matrix.platform_name }}" == "tvos" ]; then
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1 BOOTJDK=$JAVA_HOME/bin
@@ -61,6 +85,7 @@ jobs:
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} BOOTJDK=$JAVA_HOME/bin
           fi
 
+      # --- ARTIFACT DISPATCH MANAGEMENT ---
       - name: Upload regular ipa
         uses: actions/upload-artifact@main
         with:

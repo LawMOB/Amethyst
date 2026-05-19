@@ -3,17 +3,17 @@ name: Development Build
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Allows you to manually trigger the build from your browser
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-14 # Uses macOS with Xcode 15 tools installed
+    runs-on: macos-14
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive # Automatically pulls in native components/submodules
+        submodules: recursive
 
     - name: Set up Xcode Version
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
@@ -24,10 +24,18 @@ jobs:
         path: ~/Library/Developer/Xcode/DerivedData
         key: ${{ runner.os }}-xcode-${{ hashFiles('**/*.xcodeproj') }}
 
-    - name: Build Xcode Project
+    - name: Find Scheme and Build Xcode Project
       run: |
+        # 1. Automatically extract the first valid scheme name from the project
+        SCHEME_NAME=$(xcodebuild -project Amethyst.xcodeproj -list | sed -n '/Schemes:/,$p' | sed -1,2d | sed 's/^[[:space:]]*//' | head -n 1)
+        echo "Detected Scheme Name: '$SCHEME_NAME'"
+        
+        # 2. Save it to the environment so the packaging step can read it
+        echo "TARGET_SCHEME=$SCHEME_NAME" >> $GITHUB_ENV
+        
+        # 3. Build using the discovered scheme name
         xcodebuild -project Amethyst.xcodeproj \
-                   -scheme PojavLauncher \
+                   -scheme "$SCHEME_NAME" \
                    -configuration Release \
                    -sdk iphoneos \
                    CODE_SIGNING_ALLOWED=NO \
@@ -37,9 +45,8 @@ jobs:
     - name: Package App into IPA
       run: |
         mkdir -p Payload
-        # Copy the built app bundle into the Payload folder
-        cp -r ~/Library/Developer/Xcode/DerivedData/Amethyst-*/Build/Products/Release-iphoneos/PojavLauncher.app Payload/
-        # Compress the Payload folder into an installer IPA file
+        # Copy the compiled .app file dynamically using the detected target name
+        cp -r ~/Library/Developer/Xcode/DerivedData/Amethyst-*/Build/Products/Release-iphoneos/*.app Payload/
         zip -r Amethyst.ipa Payload
 
     - name: Upload Finished IPA

@@ -27,16 +27,19 @@ jobs:
 
     - name: Install System Dependencies
       run: |
-        brew install automake autoconf libtool
+        # Install standard build utility systems required by the project
+        brew install automake autoconf libtool ldid wget
 
     - name: Run Project Makefile
       run: |
-        # Override JAVA_HOME explicitly using GitHub's internal action output variable
-        export JAVA_HOME="${{ steps.setup-java.outputs.path }}"
-        echo "Passing JAVA_HOME path to compiler: $JAVA_HOME"
+        # 1. Capture the exact base folder path of the installed JDK 8
+        JDK_BASE_PATH="${{ steps.setup-java.outputs.path }}"
         
-        # Run make while feeding the path directly to the script context
-        make JAVA_HOME="$JAVA_HOME" JDK_HOME="$JAVA_HOME"
+        # 2. Add Java's bin directory directly into the global system PATH
+        export PATH="$JDK_BASE_PATH/bin:$PATH"
+        
+        # 3. Trigger make while manually feeding BOTH target tracking variables
+        make JAVA_HOME="$JDK_BASE_PATH" BOOTJDK="$JDK_BASE_PATH/bin"
 
     - name: Cache Build Dependencies
       uses: actions/cache@v4
@@ -46,7 +49,7 @@ jobs:
 
     - name: Find Scheme and Build Xcode Project
       run: |
-        export JAVA_HOME="${{ steps.setup-java.outputs.path }}"
+        JDK_BASE_PATH="${{ steps.setup-java.outputs.path }}"
         SCHEME_NAME=$(xcodebuild -project Amethyst.xcodeproj -list | awk '/Schemes:/{flag=1;next} /^$/{flag=0} flag' | sed 's/^[[:space:]]*//' | head -n 1)
         echo "Detected Scheme Name: '$SCHEME_NAME'"
         
@@ -63,7 +66,8 @@ jobs:
                    -sdk iphoneos \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   JAVA_HOME="$JAVA_HOME" \
+                   JAVA_HOME="$JDK_BASE_PATH" \
+                   BOOTJDK="$JDK_BASE_PATH/bin" \
                    clean build
 
     - name: Package App into IPA

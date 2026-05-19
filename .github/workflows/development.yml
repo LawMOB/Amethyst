@@ -20,9 +20,10 @@ jobs:
 
     - name: Set up JDK 8 (Azul Zulu for Apple Silicon)
       uses: actions/setup-java@v4
+      id: setup-java
       with:
         java-version: '8'
-        distribution: 'zulu' # Azul supports native Java 8 on Apple Silicon Mac runners
+        distribution: 'zulu'
 
     - name: Install System Dependencies
       run: |
@@ -30,7 +31,12 @@ jobs:
 
     - name: Run Project Makefile
       run: |
-        make
+        # Override JAVA_HOME explicitly using GitHub's internal action output variable
+        export JAVA_HOME="${{ steps.setup-java.outputs.path }}"
+        echo "Passing JAVA_HOME path to compiler: $JAVA_HOME"
+        
+        # Run make while feeding the path directly to the script context
+        make JAVA_HOME="$JAVA_HOME" JDK_HOME="$JAVA_HOME"
 
     - name: Cache Build Dependencies
       uses: actions/cache@v4
@@ -40,6 +46,7 @@ jobs:
 
     - name: Find Scheme and Build Xcode Project
       run: |
+        export JAVA_HOME="${{ steps.setup-java.outputs.path }}"
         SCHEME_NAME=$(xcodebuild -project Amethyst.xcodeproj -list | awk '/Schemes:/{flag=1;next} /^$/{flag=0} flag' | sed 's/^[[:space:]]*//' | head -n 1)
         echo "Detected Scheme Name: '$SCHEME_NAME'"
         
@@ -56,6 +63,7 @@ jobs:
                    -sdk iphoneos \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
+                   JAVA_HOME="$JAVA_HOME" \
                    clean build
 
     - name: Package App into IPA

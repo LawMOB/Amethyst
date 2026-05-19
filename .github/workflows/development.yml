@@ -18,6 +18,16 @@ jobs:
     - name: Set up Xcode Version
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
+    - name: Install System Dependencies
+      run: |
+        # Install build dependencies often required by the underlying Makefile layout
+        brew install automake autoconf libtool openjdk
+
+    - name: Run Project Makefile
+      run: |
+        # Pre-build native components (LWJGL wrappers, GL4ES, runtime modules)
+        make
+
     - name: Cache Build Dependencies
       uses: actions/cache@v4
       with:
@@ -26,24 +36,16 @@ jobs:
 
     - name: Find Scheme and Build Xcode Project
       run: |
-        # 1. Print out the full project structure to the logs for safety
-        echo "=== Project Schemes Available ==="
-        xcodebuild -project Amethyst.xcodeproj -list
-        
-        # 2. Extract the correct scheme line cleanly using awk
         SCHEME_NAME=$(xcodebuild -project Amethyst.xcodeproj -list | awk '/Schemes:/{flag=1;next} /^$/{flag=0} flag' | sed 's/^[[:space:]]*//' | head -n 1)
         echo "Detected Scheme Name: '$SCHEME_NAME'"
         
-        # 3. Fail early if no scheme was parsed to prevent blank-name errors
         if [ -z "$SCHEME_NAME" ]; then
           echo "Error: Could not automatically detect an Xcode scheme!"
           exit 1
         fi
         
-        # 4. Save to environment for the packaging step
         echo "TARGET_SCHEME=$SCHEME_NAME" >> $GITHUB_ENV
         
-        # 5. Execute compilation
         xcodebuild -project Amethyst.xcodeproj \
                    -scheme "$SCHEME_NAME" \
                    -configuration Release \
@@ -55,7 +57,6 @@ jobs:
     - name: Package App into IPA
       run: |
         mkdir -p Payload
-        # Copy the compiled app folder using a wild card
         cp -r ~/Library/Developer/Xcode/DerivedData/Amethyst-*/Build/Products/Release-iphoneos/*.app Payload/
         zip -r Amethyst.ipa Payload
 

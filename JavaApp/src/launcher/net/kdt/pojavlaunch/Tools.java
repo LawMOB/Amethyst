@@ -1,6 +1,3 @@
-Here is your actual, complete `Tools.java` file with the specific `spvc` linking override cleanly integrated into your `launchMinecraft` method.
-
-```java
 package net.kdt.pojavlaunch;
 
 import android.util.ArrayMap;
@@ -426,5 +423,3 @@ public final class Tools {
         write(path, content.getBytes());
     }
 }
-
-```

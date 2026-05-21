@@ -196,22 +196,6 @@ void registerOpenHandler(JNIEnv *env) {
         (*env)->ExceptionClear(env);
     }
 
-    // Register CTCDesktopPeer natives (with Java 25 / modern Cacio support)
-    cls = (*env)->FindClass(env, "net/java/openjdk/cacio/ctc/CTCDesktopPeer");
-    if ((*env)->ExceptionOccurred(env)) {
-        (*env)->ExceptionClear(env); // Clear error state before looking up fallback path
-        cls = (*env)->FindClass(env, "com/github/caciocavallosilano/cacio/ctc/CTCDesktopPeer");
-    }
-    
-    if (cls != NULL && !(*env)->ExceptionOccurred(env)) {
-        JNINativeMethod peerOpenMethods[] = {
-            {"openFile", "(Ljava/lang/String;)V", (void *)&CTCDesktopPeer_openGlobal},
-            {"openUri", "(Ljava/lang/String;)V", (void *)&CTCDesktopPeer_openGlobal}
-        };
-        (*env)->RegisterNatives(env, cls, peerOpenMethods, 2);
-    } else if ((*env)->ExceptionOccurred(env)) {
-        (*env)->ExceptionClear(env);
-    }
 }
 
 // JNI_OnLoad - lazy GLFW class init

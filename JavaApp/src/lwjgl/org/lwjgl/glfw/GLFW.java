@@ -808,6 +808,10 @@ public class GLFW
     public static int glfwGetPlatform() {
         return GLFW_PLATFORM_X11;
     }
+    
+public static boolean glfwPlatformSupported(int platform) {
+    return platform == GLFW_PLATFORM_NULL;
+}
 
     @NativeType("GLFWwindow *")
     public static long glfwGetCurrentContext() {

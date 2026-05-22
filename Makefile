@@ -229,7 +229,8 @@ ifndef SDKPATH
 $(error You need to specify SDKPATH to the path of iPhoneOS.sdk. The SDK version should be 14.0 or newer.)
 endif
 
-all: clean native java jre assets payload package dsym
+# dsym removed from default build - workflow packages IPA directly
+all: clean native java jre assets payload package
 
 help:
 	echo 'Makefile to compile Angel Aura Amethyst'
@@ -274,7 +275,6 @@ native: dep_mg
 		..
 
 	cmake --build $(WORKINGDIR) --config $(CMAKE_BUILD_TYPE) -j$(JOBS)
-	#	--target awt_headless awt_xawt libOSMesaOverride.dylib tinygl4angle AngelAuraAmethyst
 	rm $(WORKINGDIR)/libawt_headless.dylib
 	echo '[Amethyst v$(VERSION)] native - end'
 
@@ -366,12 +366,6 @@ payload: native dep_mg java jre assets
 		ldid -S$(SOURCEDIR)/entitlements.sideload.xml $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app/AngelAuraAmethyst; \
 	fi
 	chmod -R 755 $(OUTPUTDIR)/Payload
-	# Always run the platform retag — it's idempotent on already-iOS-tagged
-	# Mach-Os, and catches dylibs we drop in fresh from Maven (which ship
-	# tagged platform=macos and would be silently rejected by iOS dyld).
-	# Originally guarded by `[ PLATFORM != 2 ]` on the assumption that all
-	# committed dylibs were already iOS-tagged — that broke when v19 added
-	# the 3.3.5 lwjgl-stb dylib straight from upstream.
 	$(call METHOD_MACHO,$(OUTPUTDIR)/Payload/AngelAuraAmethyst.app,$(call METHOD_CHANGE_PLAT,$(PLATFORM),$$file)); \
 	$(call METHOD_MACHO,$(OUTPUTDIR)/java_runtimes,$(call METHOD_CHANGE_PLAT,$(PLATFORM),$$file));
 	echo '[Amethyst v$(VERSION)] payload - end'
@@ -416,14 +410,14 @@ package: payload
 	$(call METHOD_PACKAGE); \
 	zip --symlinks -r $(OUTPUTDIR)/java_runtimes.zip java_runtimes; \
 	echo '[Amethyst v$(VERSION)] package - end'
-	
+
 dsym: payload
 	echo '[Amethyst v$(VERSION)] dsym - start'
 	dsymutil --arch arm64 $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app/AngelAuraAmethyst; \
 	rm -rf $(OUTPUTDIR)/AngelAuraAmethyst.dSYM; \
 	mv $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app/AngelAuraAmethyst.dSYM $(OUTPUTDIR)/AngelAuraAmethyst.dSYM
 	echo '[Amethyst v$(VERSION)] dsym - end'
-	
+
 codesign:
 	echo '[Amethyst v$(VERSION)] codesign - start'
 	cp '$(PROVISIONING)' $(OUTPUTDIR)/Payload/AngelAuraAmethyst.app/embedded.mobileprovision
@@ -438,6 +432,5 @@ clean:
 	rm -rf $(OUTPUTDIR)
 	echo '[Amethyst v$(VERSION)] clean - end'
 
-		
 
 .PHONY: all clean check native java jre package dsym deploy help

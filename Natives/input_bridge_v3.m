@@ -578,7 +578,9 @@ char getKeyModifiers(int key, int action) {
 
 void CallbackBridge_nativeSendKey(int key, int scancode, int action, int mods) {
     if (GLFW_invoke_Key && isInputReady) {
-        keyDownBuffer[MAX(0, key-31)]=(jbyte)action;
+        if (keyDownBuffer != NULL) {
+            keyDownBuffer[MAX(0, key-31)]=(jbyte)action;
+        }
         if (mods == 0) {
             mods = getKeyModifiers(key, action);
         }

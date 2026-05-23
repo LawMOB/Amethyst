@@ -11,7 +11,7 @@ TARGETS := $(TARGETS:$(SOURCEDIR)/%=$(OUTPUTDIR)/%.jar)
 # Add all jars to classpath and allow compiling with private API
 JCFLAGS := -cp "$(subst $() $(),:,$(wildcard $(SOURCEDIR)/*/):$(wildcard libs/*/*.jar))" -XDignore.symbol.file
 
-all: $(TARGETS)
+all: $(TARGETS) $(OUTPUTDIR)/lwjgl33.jar
 	
 # Sometimes the CI produces empty class file resulting in broken jar, so we check and abort here
 check_empty_classes:
@@ -45,6 +45,13 @@ $(OUTPUTDIR)/lwjgl.jar: $(CLASSES) check_empty_classes
 	@cd $(OUTPUTDIR)/lwjgl_lib && find ../../libs/lwjgl -name 'lwjgl*.jar' -exec $(BOOTJDK)/jar -xf {} \; && rm -rf META-INF
 	@cp -R $(OUTPUTDIR)/lwjgl/* $(OUTPUTDIR)/lwjgl_lib/
 	@$(BOOTJDK)/jar -cf $@ -C $(OUTPUTDIR)/lwjgl_lib .
+
+$(OUTPUTDIR)/lwjgl33.jar: check_empty_classes
+	@set -e
+	@echo "Creating $@"
+	@mkdir -p $(OUTPUTDIR)/lwjgl33_lib
+	@cd $(OUTPUTDIR)/lwjgl33_lib && find ../../libs/lwjgl33 -name 'lwjgl*.jar' -exec $(BOOTJDK)/jar -xf {} \; && rm -rf META-INF
+	@$(BOOTJDK)/jar -cf $@ -C $(OUTPUTDIR)/lwjgl33_lib .
 
 $(OUTPUTDIR)/patchjna_agent.jar: $(CLASSES)
 	@set -e

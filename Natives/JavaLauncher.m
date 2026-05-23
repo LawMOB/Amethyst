@@ -352,7 +352,40 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
     init_loadCustomJvmFlags(&margc, (const char **)margv);
     NSLog(@"[Init] Found JLI lib");
 
-    NSString *classpath = [NSString stringWithFormat:@"%@/*", librariesPath];
+    // Detect LWJGL version from version info to pick the right jar (3.4.1 vs 3.3.3)
+    // lwjgl.jar = 3.4.1 (for 26.x snapshots), lwjgl33.jar = 3.3.3 (for 1.21.x and older)
+    NSString *lwjglJar = [NSString stringWithFormat:@"%@/lwjgl.jar", librariesPath];
+    if ([launchTarget isKindOfClass:NSDictionary.class]) {
+        NSArray *libraries = launchTarget[@"libraries"];
+        for (NSDictionary *lib in libraries) {
+            NSString *name = lib[@"name"];
+            if (name && [name hasPrefix:@"org.lwjgl:lwjgl:"]) {
+                NSString *ver = [[name componentsSeparatedByString:@":"] lastObject];
+                NSArray *parts = [ver componentsSeparatedByString:@"."];
+                if (parts.count >= 2) {
+                    int minor = [[parts objectAtIndex:1] intValue];
+                    if (minor < 4) {
+                        lwjglJar = [NSString stringWithFormat:@"%@/lwjgl33.jar", librariesPath];
+                        NSLog(@"[JavaLauncher] Using LWJGL 3.3.x jar for version %@", ver);
+                    } else {
+                        NSLog(@"[JavaLauncher] Using LWJGL 3.4.x jar for version %@", ver);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    // Build classpath with all jars from libs/ except lwjgl*.jar, then add correct lwjgl jar
+    NSMutableString *classpathBuilder = [NSMutableString string];
+    NSArray *libFiles = [fm contentsOfDirectoryAtPath:librariesPath error:nil];
+    for (NSString *libFile in libFiles) {
+        if ([libFile hasSuffix:@".jar"] &&
+            ![libFile hasPrefix:@"lwjgl"] ) {
+            [classpathBuilder appendFormat:@"%@/%@:", librariesPath, libFile];
+        }
+    }
+    [classpathBuilder appendString:lwjglJar];
+    NSString *classpath = classpathBuilder;
     if (launchJar) {
         classpath = [classpath stringByAppendingFormat:@":%@", launchTarget];
     }

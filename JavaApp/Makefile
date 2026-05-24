@@ -46,11 +46,12 @@ $(OUTPUTDIR)/lwjgl.jar: $(CLASSES) check_empty_classes
 	@cp -R $(OUTPUTDIR)/lwjgl/* $(OUTPUTDIR)/lwjgl_lib/
 	@$(BOOTJDK)/jar -cf $@ -C $(OUTPUTDIR)/lwjgl_lib .
 
-$(OUTPUTDIR)/lwjgl33.jar: check_empty_classes
+$(OUTPUTDIR)/lwjgl33.jar: $(CLASSES) check_empty_classes
 	@set -e
 	@echo "Creating $@"
 	@mkdir -p $(OUTPUTDIR)/lwjgl33_lib
 	@cd $(OUTPUTDIR)/lwjgl33_lib && find ../../libs/lwjgl33 -name 'lwjgl*.jar' -exec $(BOOTJDK)/jar -xf {} \; && rm -rf META-INF
+	@cp -R $(OUTPUTDIR)/lwjgl/* $(OUTPUTDIR)/lwjgl33_lib/
 	@$(BOOTJDK)/jar -cf $@ -C $(OUTPUTDIR)/lwjgl33_lib .
 
 $(OUTPUTDIR)/patchjna_agent.jar: $(CLASSES)

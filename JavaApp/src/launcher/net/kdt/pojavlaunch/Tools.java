@@ -226,11 +226,11 @@ public final class Tools {
 
             String[] version = libItem.name.split(":")[2].split("\\.");
             if (libItem.name.startsWith("net.java.dev.jna:jna:")) {
-                if (Integer.parseInt(version[0]) >= 5 && Integer.parseInt(version[1]) >= 13) continue;
+                if (Integer.parseInt(version[0]) >= 5 && Integer.parseInt(version[1]) >= 17) continue;
                 createLibraryInfo(libItem);
-                libItem.name = "net.java.dev.jna:jna:5.13.0";
-                libItem.downloads.artifact.path = "net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar";
-                libItem.downloads.artifact.url = "https://libraries.minecraft.net/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar";
+                libItem.name = "net.java.dev.jna:jna:5.17.0";
+                libItem.downloads.artifact.path = "net/java/dev/jna/jna/5.17.0/jna-5.17.0.jar";
+                libItem.downloads.artifact.url = "https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.17.0/jna-5.17.0.jar";
             } else if (libItem.name.startsWith("org.ow2.asm:asm-all:")) {
                 if(Integer.parseInt(version[0]) >= 5) continue;
                 createLibraryInfo(libItem);

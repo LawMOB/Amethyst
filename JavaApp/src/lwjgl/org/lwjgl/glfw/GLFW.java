@@ -787,7 +787,8 @@ public class GLFW
         return lastCallback;
     }
 
-    public static GLFWIMEStatusCallback glfwSetIMEStatusCallback(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("GLFWimestatusfun") GLFWIMEStatusCallbackI cbfun) {
+    @SuppressWarnings("unchecked")
+    public static <T> T glfwSetIMEStatusCallback(@NativeType("GLFWwindow *") long window, @Nullable Object cbfun) {
         return null;
     }
 
@@ -817,7 +818,8 @@ public class GLFW
         return platform == GLFW_PLATFORM_NULL;
     }
 
-    public static GLFWPreeditCallback glfwSetPreeditCallback(@NativeType("GLFWwindow *") long window, @Nullable @NativeType("GLFWpreeditfun") GLFWPreeditCallbackI cbfun) {
+    @SuppressWarnings("unchecked")
+    public static <T> T glfwSetPreeditCallback(@NativeType("GLFWwindow *") long window, @Nullable Object cbfun) {
         return null;
     }
 

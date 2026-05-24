@@ -281,6 +281,12 @@ void JNI_OnUnload(JavaVM* vm, void* reserved) {
     runtimeJNIEnvPtr = NULL;
 }
 
+JNIEXPORT void JNICALL Java_org_lwjgl_glfw_GLFW_nativeInitGLFWBridge(JNIEnv* env, jclass cls) {
+    // Called from GLFW static initializer after the class is fully loaded
+    // This ensures FindClass succeeds since we're on the JVM thread with the class available
+    JNI_OnLoadGLFW_lazy(env);
+}
+
 #define ADD_CALLBACK_WWIN(NAME) \
 JNIEXPORT jlong JNICALL Java_org_lwjgl_glfw_GLFW_nglfwSet##NAME##Callback(JNIEnv * env, jclass cls, jlong window, jlong callbackptr) { \
     JNI_OnLoadGLFW_lazy(env); \

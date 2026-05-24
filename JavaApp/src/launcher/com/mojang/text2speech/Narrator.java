@@ -17,4 +17,14 @@ public interface Narrator {
         System.setProperty("jna.library.path", System.getProperty("jna.library.path") + sep + "./src/natives/resources/");
         System.setProperty("jna.library.path", System.getProperty("jna.library.path") + sep + System.getProperty("java.library.path"));
     }
+
+    class InitializeException extends RuntimeException {
+        public InitializeException(String message) {
+            super(message);
+        }
+
+        public InitializeException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }

@@ -99,7 +99,7 @@ static GameSurfaceView* pojavWindow;
         if(getPrefBool(@"video.max_framerate")) {
             displayLink.preferredFrameRateRange = CAFrameRateRangeMake(30, 120, 120);
         } else {
-            displayLink.preferredFrameRateRange = CAFrameRateRangeMake(30, 60, 60);
+            displayLink.preferredFrameRateRange = CAFrameRateRangeMake(30, 120, 120);
         }
     }
     [displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];

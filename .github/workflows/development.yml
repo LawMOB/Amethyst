@@ -27,42 +27,27 @@ jobs:
 
     - name: Install System Dependencies
       run: |
-        brew install automake autoconf libtool ldid wget make
+        brew install ldid wget make
         sudo mkdir -p /usr/local/bin
         sudo ln -s /opt/homebrew/bin/gmake /usr/local/bin/gmake
-        echo "Created gmake compatibility link at /usr/local/bin/gmake"
 
     - name: Run Project Makefile
       run: |
         JDK_BASE_PATH="${{ steps.setup-java.outputs.path }}"
         export PATH="$JDK_BASE_PATH/bin:$PATH"
-        
-        # Explicit clean-up step to destroy broken or empty compiler class files
         make clean JAVA_HOME="$JDK_BASE_PATH" BOOTJDK="$JDK_BASE_PATH/bin" || true
-        rm -rf build
-        
-        # Fresh compilation run
         make JAVA_HOME="$JDK_BASE_PATH" BOOTJDK="$JDK_BASE_PATH/bin"
-
-    - name: Cache Build Dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/Library/Developer/Xcode/DerivedData
-        key: ${{ runner.os }}-xcode-${{ hashFiles('**/*.xcodeproj') }}
 
     - name: Find Scheme and Build Xcode Project
       run: |
         JDK_BASE_PATH="${{ steps.setup-java.outputs.path }}"
         SCHEME_NAME=$(xcodebuild -project Amethyst.xcodeproj -list | awk '/Schemes:/{flag=1;next} /^$/{flag=0} flag' | sed 's/^[[:space:]]*//' | head -n 1)
         echo "Detected Scheme Name: '$SCHEME_NAME'"
-        
         if [ -z "$SCHEME_NAME" ]; then
           echo "Error: Could not automatically detect an Xcode scheme!"
           exit 1
         fi
-        
         echo "TARGET_SCHEME=$SCHEME_NAME" >> $GITHUB_ENV
-        
         xcodebuild -project Amethyst.xcodeproj \
                    -scheme "$SCHEME_NAME" \
                    -configuration Release \
@@ -76,8 +61,6 @@ jobs:
 
     - name: Package App into IPA
       run: |
-        # The build environment already structured the Payload folder inside artifacts/
-        # Move into that directory and compress it directly
         cd artifacts
         zip -r ../Amethyst.ipa Payload
 

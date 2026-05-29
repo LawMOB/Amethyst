@@ -567,6 +567,7 @@ public class GLFW
     private static native long nglfwSetWindowSizeCallback(long window, long ptr);
     // private static native void nglfwSetInputReady();
     private static native void nglfwSetShowingWindow(long window);
+    private static native void nativeInitGLFWBridge();
 
     /*
      private static void priGlfwSetError(int error) {

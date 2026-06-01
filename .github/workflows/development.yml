@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
     - name: Checkout Repository
@@ -25,7 +25,7 @@ jobs:
         java-version: '8'
         distribution: 'zulu'
 
-    - name: Install System Dependencies
+    - name: Install Dependencies
       run: |
         brew install ldid wget make
         sudo mkdir -p /usr/local/bin

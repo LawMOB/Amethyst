@@ -68,9 +68,7 @@ bool redirectFunctionDirect(char *name, void *patchAddr, void *target) {
 }
 // redirectFunction for iOS 26+ (TXM)
 bool redirectFunctionMirrored(char *name, void *patchAddr, void *target) {
-    if (DeviceHasJITFlags(JIT_FLAG_FORCE_MIRRORED | JIT_FLAG_HAS_TXM)) {
-        JIT26PrepareRegionForPatching(patchAddr, sizeof(patch));
-    }
+    JIT26PrepareRegionForPatching(patchAddr, sizeof(patch));
     // mirror `addr` (rx, JIT applied) to `mirrored` (rw)
     vm_address_t mirrored = 0;
     vm_prot_t cur_prot, max_prot;
@@ -167,9 +165,8 @@ void* hooked_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off
     if (map == MAP_FAILED && fd && (prot & PROT_EXEC)) {
         //printf("[DyldLVBypass] mmap(prot=%d, flags=%d, fd=%d)\n", prot, flags, fd);
         map = __mmap(addr, len, prot, flags | MAP_PRIVATE | MAP_ANON, 0, 0);
-        if (DeviceHasJITFlags(JIT_FLAG_FORCE_MIRRORED | JIT_FLAG_HAS_TXM)) {
-            JIT26PrepareRegion(map, len);
-        }
+        JIT26PrepareRegion(map, len);
+        
         
         void *memoryLoadedFile = __mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, offset);
         if (redirectFunction == redirectFunctionDirect) {
@@ -228,21 +225,23 @@ void init_bypassDyldLibValidation() {
 
     NSDebugLog(@"[DyldLVBypass] init");
     
-    if (@available(iOS 26.0, *)) {
-        if (DeviceHasJITFlags(JIT_FLAG_FORCE_MIRRORED | JIT_FLAG_HAS_TXM)) {
+    switch ((int)DeviceGetJITFlags(YES)) {
+        case JIT_FLAG_FORCE_MIRRORED | JIT_FLAG_HAS_TXM:
             NSDebugLog(@"[DyldLVBypass] Using redirectFunctionMirrored");
             redirectFunction = redirectFunctionMirrored;
-        } else if (DeviceHasJITFlags(JIT_FLAG_FORCE_MIRRORED)) {
-            // Non-TXM iOS 26+: avoid patching code in dsc, use hardware breakpoint instead
+            break;
+        case JIT_FLAG_FORCE_MIRRORED:
+            // Special special case for non-TXM iOS 26+
+            // We can JIT without script, but we cannot modify existing code in dsc without it.
+            // Therefore, we choose a hook method that avoids patching code in dsc completely, using hardware breakpoint.
+            // The function only stashes the original function pointers, and the breakpoint handler will redirect to our hook
             NSDebugLog(@"[DyldLVBypass] Using redirectFunctionHWBreakpoint");
             redirectFunction = redirectFunctionHWBreakpoint;
-        } else {
+            break;
+        default:
             NSDebugLog(@"[DyldLVBypass] Using redirectFunctionDirect");
             redirectFunction = redirectFunctionDirect;
-        }
-    } else {
-        NSDebugLog(@"[DyldLVBypass] Using redirectFunctionDirect");
-        redirectFunction = redirectFunctionDirect;
+            break;
     }
     
     // Modifying exec page during execution may cause SIGBUS, so ignore it now

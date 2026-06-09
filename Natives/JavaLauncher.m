@@ -108,7 +108,7 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
     init_loadDefaultEnv();
     init_loadCustomEnv();
 
-    BOOL requiresTXMWorkaround = YES;
+    BOOL requiresTXMWorkaround = NO;
     BOOL jit26AlwaysAttached = getPrefBool(@"debug.debug_always_attached_jit");
     if (requiresTXMWorkaround) {
         static void *result;

@@ -236,10 +236,6 @@ if (@available(iOS 26.0, *)) {
     redirectFunction = redirectFunctionDirect;
 }    
 
-    } else {
-        NSDebugLog(@"[DyldLVBypass] Using redirectFunctionDirect");
-        redirectFunction = redirectFunctionDirect;
-    }
     
     // Modifying exec page during execution may cause SIGBUS, so ignore it now
     // Before calling JLI_Launch, this will be set back to SIG_DFL
